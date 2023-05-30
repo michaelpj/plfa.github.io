@@ -20,6 +20,28 @@ Now call "solve".
 This will solve the term holes at the beginning and the end so you don't have to fill them in.
 You can do this whenever the next step is fixed enough, so if you fill in the reasoning you want to do for a step, you can use "solve" and agda will fill in the next term.
 
+# Goal information will show computed terms
+
+Suppose you have a partial equational reasoning proof:
+```agda
+begin
+    2 + (x + y)
+  ≡⟨ ?2 ⟩
+    ?
+  ≡⟨ ? ⟩
+    ?
+  ≡⟨ ? ⟩
+    ?
+∎
+```
+
+The first term can be computed more.
+To see this, you can ask for the goal context for `?2` and it will show something like this:
+```
+?2 = suc (suc (x + y)) = y_5244
+```
+i.e. your LHS and an unknown RHS (because it's a hole), but it will show the LHS fully computed, which you can copy into your file directly.
+
 # Try and make your definitions compute as much as possible
 
 For example, compare:
