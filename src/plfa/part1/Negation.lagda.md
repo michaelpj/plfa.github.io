@@ -14,11 +14,11 @@ and classical logic.
 
 ```agda
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
-open import Data.Nat using (ℕ; zero; suc)
+open import Data.Nat using (ℕ; zero; suc; _<_)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Data.Product using (_×_)
-open import plfa.part1.Isomorphism using (_≃_; extensionality)
+open import Data.Product using (_×_; _,_; proj₁; proj₂)
+open import plfa.part1.Isomorphism using (_≃_; extensionality; _∘_; _≲_)
 ```
 
 
@@ -190,9 +190,9 @@ Using negation, show that
 is irreflexive, that is, `n < n` holds for no `n`.
 
 ```agda
--- Your code goes here
+<-irreflexive : ∀ (n : ℕ) → ¬ (n < n)
+<-irreflexive (suc n) (Data.Nat.s≤s p) = <-irreflexive n p
 ```
-
 
 #### Exercise `trichotomy` (practice)
 
@@ -221,9 +221,19 @@ version of De Morgan's Law.
 This result is an easy consequence of something we've proved previously.
 
 ```agda
--- Your code goes here
-```
+-- copy of the earlier one fixed for stdlib
+→-distrib-⊎ : ∀ {A B C : Set} → (A ⊎ B → C) ≃ ((A → C) × (B → C))
+→-distrib-⊎ =
+  record
+    { to      = λ{ f → (f ∘ inj₁ , f ∘ inj₂) }
+    ; from    = λ{ ( g , h ) → λ{ (inj₁ x) → g x ; (inj₂ y) → h y } }
+    ; from∘to = λ{ f → extensionality λ{ (inj₁ x) → refl ; (inj₂ y) → refl } }
+    ; to∘from = λ{ ( g , h ) → refl }
+    }
 
+⊎-dual-× : ∀ {A B : Set} → ¬ (A ⊎ B) ≃ (¬ A) × (¬ B)
+⊎-dual-× {A} {B} = →-distrib-⊎ {A} {B} {⊥}
+```
 
 Do we also have the following?
 
@@ -232,6 +242,13 @@ Do we also have the following?
 If so, prove; if not, can you give a relation weaker than
 isomorphism that relates the two sides?
 
+```agda
+-- Can't even do embedding because you can't go the other way. A function
+-- for killing pairs of A and B doesn't let you kill either As or Bs
+-- individually
+×-dual-⊎ : ∀ {A B : Set} → (¬ A) ⊎ (¬ B) → ¬ (A × B)
+×-dual-⊎ = λ { (inj₁ ¬a) (a , _) → ¬a a ; (inj₂ ¬b) (_ , b) → ¬b b }
+```
 
 ## Intuitive and Classical logic
 
@@ -378,9 +395,63 @@ Consider the following principles:
 Show that each of these implies all the others.
 
 ```agda
--- Your code goes here
-```
+lem-implies-dne :
+  (∀ {A : Set} → A ⊎ ¬ A)
+  → (∀ {A : Set} → ¬ ¬ A → A)
+lem-implies-dne lem {A} ¬¬a with lem {A}
+... | inj₁ a = a
+... | inj₂ ¬a = ⊥-elim (¬-elim ¬¬a ¬a)
 
+dne-implies-lem :
+  (∀ {A : Set} → ¬ ¬ A → A)
+  → (∀ {A : Set} → A ⊎ ¬ A)
+dne-implies-lem dne {A} = dne em-irrefutable
+
+lem-implies-peirce :
+  (∀ {A : Set} → A ⊎ ¬ A)
+  → (∀ {A B : Set} → ((A → B) → A) → A)
+lem-implies-peirce lem {A} {B} f with lem {A}
+... | inj₁ a = a
+... | inj₂ ¬a =  f λ a → ⊥-elim (¬-elim ¬a a)
+
+peirce-implies-lem :
+  (∀ {A B : Set} → ((A → B) → A) → A)
+  → (∀ {A : Set} → A ⊎ ¬ A)
+peirce-implies-lem peirce {A} =
+  let
+    lemma = peirce {A ⊎ ¬ A} {⊥}
+    irref = em-irrefutable {A}
+  in lemma λ ¬lem → ⊥-elim (¬-elim irref ¬lem)
+
+lem-implies-iad :
+  (∀ {A : Set} → A ⊎ ¬ A)
+  → (∀ {A B : Set} → (A → B) → ¬ A ⊎ B)
+lem-implies-iad lem {A} {B} f with lem {A}
+... | inj₁ a = inj₂ (f a)
+... | inj₂ ¬a = inj₁ ¬a
+
+⊎-swap : ∀ {A B : Set} → A ⊎ B → B ⊎ A
+⊎-swap (inj₁ a) = inj₂ a
+⊎-swap (inj₂ b) =  inj₁ b
+
+iad-implies-lem :
+  (∀ {A B : Set} → (A → B) → ¬ A ⊎ B)
+  → (∀ {A : Set} → A ⊎ ¬ A)
+iad-implies-lem iad {A} =  ⊎-swap (iad {A} {A} λ z → z)
+
+lem-implies-de-morgan :
+  (∀ {A : Set} → A ⊎ ¬ A)
+  → (∀ {A B : Set} → ¬ (¬ A × ¬ B) → A ⊎ B)
+lem-implies-de-morgan lem {A} {B} ¬thing with lem {A} | lem {B}
+... | inj₁ a  | _       = inj₁ a
+... | _       | inj₁ b  = inj₂ b
+... | inj₂ ¬a | inj₂ ¬b =  ⊥-elim (¬thing ( ¬a , ¬b))
+
+de-morgan-implies-lem :
+  (∀ {A B : Set} → ¬ (¬ A × ¬ B) → A ⊎ B)
+  → (∀ {A : Set} → A ⊎ ¬ A)
+de-morgan-implies-lem dm {A} = dm {A} {¬ A} λ { (¬a , ¬¬a) → ¬-elim ¬¬a ¬a}
+```
 
 #### Exercise `Stable` (stretch)
 
@@ -393,7 +464,12 @@ Show that any negated formula is stable, and that the conjunction
 of two stable formulas is stable.
 
 ```agda
--- Your code goes here
+¬-stable : ∀ {A : Set} → Stable (¬ A)
+¬-stable = λ ¬¬¬a a → ¬-elim ¬¬¬a ( ¬¬-intro a)
+
+×-stable : ∀ {A B : Set} → Stable A → Stable B → Stable (A × B)
+×-stable sa sb = λ ¬¬axb →
+  (sa λ ¬a → ¬¬axb λ axb → ¬-elim ¬a (proj₁ axb)) , (sb λ ¬b →  ¬¬axb λ axb → ¬-elim ¬b (proj₂ axb))
 ```
 
 ## Standard Prelude

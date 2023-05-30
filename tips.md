@@ -119,3 +119,13 @@ It wouldn't look that different, it would just have `n` and `m` swapped.
 But then you would find that you needed to call `+-comm` from the lemma, which needs mutual recursion.
 
 Instead, you can do what's done here and use the recursive call before/after your lemma.
+
+# When to use implicit parameters
+
+Roughly: if it can be inferred easily from the result, e.g.
+```
+≤-refl : ∀ { n : ℕ } → n ≤ n
+```
+Agda will be able to infer the `n` from the `n ≤ n` in the result.
+
+Note that it would have trouble if `≤` was a function: it can't generally infer `f` and `x` from `f x`.

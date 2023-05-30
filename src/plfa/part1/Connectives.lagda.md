@@ -32,7 +32,7 @@ open Eq using (_≡_; refl)
 open Eq.≡-Reasoning
 open import Data.Nat using (ℕ)
 open import Function using (_∘_)
-open import plfa.part1.Isomorphism using (_≃_; _≲_; extensionality)
+open import plfa.part1.Isomorphism using (_≃_; _≲_; extensionality; _⇔_)
 open plfa.part1.Isomorphism.≃-Reasoning
 ```
 
@@ -238,9 +238,14 @@ Show that `A ⇔ B` as defined [earlier](/Isomorphism/#iff)
 is isomorphic to `(A → B) × (B → A)`.
 
 ```agda
--- Your code goes here
+⇔≃× : ∀ {A B : Set} → A ⇔ B ≃ (A → B) × (B → A)
+⇔≃× = record
+  { to = λ z → ⟨ _⇔_.to z , _⇔_.from z ⟩
+  ; from = λ w → record { to = proj₁ w ; from = proj₂ w }
+  ; from∘to = λ z → refl
+  ; to∘from = λ { ⟨ t , f ⟩ → refl }
+  }
 ```
-
 
 ## Truth is unit
 
@@ -451,7 +456,13 @@ commutative and associative _up to isomorphism_.
 Show sum is commutative up to isomorphism.
 
 ```agda
--- Your code goes here
+⊎-comm : ∀ {A B : Set} → A ⊎ B ≃ B ⊎ A
+⊎-comm = record
+  { to = λ aub → case-⊎ inj₂ inj₁ aub
+  ; from = λ aub → case-⊎ inj₂ inj₁ aub
+  ; to∘from = λ { (inj₁ a) → refl ; (inj₂ b) → refl }
+  ; from∘to = λ { (inj₁ a) → refl ; (inj₂ b) → refl }
+  }
 ```
 
 #### Exercise `⊎-assoc` (practice)
@@ -522,7 +533,13 @@ is the identity of sums _up to isomorphism_.
 Show empty is the left identity of sums up to isomorphism.
 
 ```agda
--- Your code goes here
+⊥-identityˡ : ∀ {A : Set} → ⊥ ⊎ A ≃ A
+⊥-identityˡ = record
+  { to = λ { (inj₂ x) → x }
+  ; from = λ x → inj₂ x
+  ; to∘from = λ y → refl
+  ; from∘to = λ { (inj₂ x) → refl }
+  }
 ```
 
 #### Exercise `⊥-identityʳ` (practice)
@@ -754,16 +771,23 @@ one of these laws is "more true" than the other.
 
 Show that the following property holds:
 ```agda
-postulate
-  ⊎-weak-× : ∀ {A B C : Set} → (A ⊎ B) × C → A ⊎ (B × C)
+⊎-weak-× : ∀ {A B C : Set} → (A ⊎ B) × C → A ⊎ (B × C)
 ```
 This is called a _weak distributive law_. Give the corresponding
 distributive law, and explain how it relates to the weak version.
 
 ```agda
--- Your code goes here
-```
+⊎-weak-× ⟨ inj₁ x , y ⟩ = inj₁ x
+⊎-weak-× ⟨ inj₂ x , y ⟩ = inj₂ ⟨ x , y ⟩
 
+⊎-distrib : ∀ {A B C : Set} → (A ⊎ B) × C ≃ (A × C) ⊎ (B × C)
+⊎-distrib = record
+  { to = λ { ⟨ inj₁ a , c ⟩ → inj₁ ⟨ a , c ⟩ ; ⟨ inj₂ b , c ⟩ → inj₂ ⟨ b , c ⟩ }
+  ; from = λ { (inj₁ ⟨ a , c ⟩) → ⟨ inj₁ a , c ⟩ ; (inj₂ ⟨ b , c ⟩) → ⟨ inj₂ b , c ⟩ }
+  ; to∘from = λ { (inj₁ ⟨ a , c ⟩) → refl ; (inj₂ ⟨ b , c ⟩) → refl }
+  ; from∘to = λ { ⟨ inj₁ a , c ⟩ → refl ; ⟨ inj₂ b , c ⟩ → refl }
+  }
+```
 
 #### Exercise `⊎×-implies-×⊎` (practice)
 
