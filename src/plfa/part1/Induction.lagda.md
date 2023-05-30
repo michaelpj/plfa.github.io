@@ -874,9 +874,21 @@ just apply the previous results which show addition
 is associative and commutative.
 
 ```agda
--- Your code goes here
-```
++-swap : ∀ (m n p : ℕ) → m + (n + p) ≡ n + (m + p)
++-swap m n p =
+  begin
+    m + (n + p)
+  ≡⟨ sym (+-assoc m n p) ⟩
+    (m + n) + p
+  ≡⟨ cong (_+ p) (+-comm m n) ⟩
+    (n + m) + p
+  ≡⟨ +-assoc n m p ⟩
+    n + (m + p)
+  ∎
 
++-swap‵ : ∀ (m n p : ℕ) → m + (n + p) ≡ n + (m + p)
++-swap‵ m n p rewrite sym (+-assoc m n p) | +-comm m n | +-assoc n m p = refl
+```
 
 #### Exercise `*-distrib-+` (recommended) {#times-distrib-plus}
 
@@ -887,9 +899,31 @@ Show multiplication distributes over addition, that is,
 for all naturals `m`, `n`, and `p`.
 
 ```agda
--- Your code goes here
-```
+*-distrib-+ : ∀ (m n p : ℕ) → (m + n) * p ≡ m * p + n * p
+*-distrib-+ zero n p = refl
+*-distrib-+ (suc m) n p =
+  begin
+    (suc m + n) * p
+  ≡⟨⟩
+    suc (m + n) * p
+  ≡⟨⟩
+    p + (m + n) * p
+  ≡⟨ cong (p +_) (*-distrib-+ m n p) ⟩
+    p + (m * p + n * p)
+  ≡⟨ sym (+-assoc p (m * p) (n * p)) ⟩
+    (p + m * p) + n * p
+  ≡⟨⟩
+    (suc m * p) + n * p
+  ∎
 
+*-distrib-+‵ : ∀ (m n p : ℕ) → (m + n) * p ≡ m * p + n * p
+*-distrib-+‵ zero n p = refl
+*-distrib-+‵ (suc m) n p = Eq.trans ( cong (p +_) (*-distrib-+‵ m n p)) ( sym ( +-assoc p (m * p) (n * p)))
+
+*-distrib-+‶ : ∀ (m n p : ℕ) → (m + n) * p ≡ m * p + n * p
+*-distrib-+‶ zero n p = refl
+*-distrib-+‶ (suc m) n p rewrite +-assoc p (m * p) (n * p) | *-distrib-+‶ m n p = refl
+```
 
 #### Exercise `*-assoc` (recommended) {#times-assoc}
 
@@ -900,9 +934,21 @@ Show multiplication is associative, that is,
 for all naturals `m`, `n`, and `p`.
 
 ```agda
--- Your code goes here
+*-assoc : ∀ (m n p : ℕ) → (m * n) * p ≡ m * (n * p)
+*-assoc zero n p = refl
+*-assoc (suc m) n p =
+  begin
+    (suc m * n) * p
+  ≡⟨⟩
+    (n + m * n) * p
+  ≡⟨ *-distrib-+ n (m * n) p ⟩
+    (n * p) + (m * n) * p
+  ≡⟨ cong ((n * p) +_) ( *-assoc m n p) ⟩
+    (n * p) + m * (n * p)
+  ≡⟨⟩
+    suc m * (n * p)
+  ∎
 ```
-
 
 #### Exercise `*-comm` (practice) {#times-comm}
 
@@ -914,7 +960,46 @@ for all naturals `m` and `n`.  As with commutativity of addition,
 you will need to formulate and prove suitable lemmas.
 
 ```agda
--- Your code goes here
+*-identity-r : ∀ (m : ℕ) → m * 0 ≡ 0
+*-identity-r zero = refl
+*-identity-r (suc m) = *-identity-r m
+
+*-suc-r : ∀ (m n : ℕ) → m * suc n ≡ m + m * n
+*-suc-r zero n = refl
+*-suc-r (suc m) n =
+  begin
+    suc m * suc n
+  ≡⟨⟩
+    suc n + m * suc n
+  ≡⟨⟩
+    suc (n + m * suc n)
+  ≡⟨ cong suc ( cong (n +_) ( *-suc-r m n) ) ⟩
+    suc (n + (m + m * n))
+  ≡⟨ cong suc ( +-swap n m (m * n)) ⟩
+    suc (m + (n + m * n))
+  ≡⟨⟩
+    suc (m + suc m * n)
+  ≡⟨⟩
+    suc m + suc m * n
+  ∎
+
+*-comm : ∀ (m n : ℕ) → m * n ≡ n * m
+*-comm m zero =
+  begin
+    m * zero
+  ≡⟨ *-identity-r m ⟩
+    zero * m
+  ∎
+*-comm m (suc n) =
+  begin
+    m * suc n
+  ≡⟨ *-suc-r m n ⟩
+    m + m * n
+  ≡⟨ cong (m +_) (*-comm m n)⟩
+    m + n * m
+  ≡⟨⟩
+    suc n * m
+  ∎
 ```
 
 
@@ -927,7 +1012,9 @@ Show
 for all naturals `n`. Did your proof require induction?
 
 ```agda
--- Your code goes here
+0∸n≡0 : ∀ (n : ℕ) → 0 ∸ n ≡ 0
+0∸n≡0 zero = refl
+0∸n≡0 (suc n) = refl
 ```
 
 
@@ -980,7 +1067,56 @@ over bitstrings:
 For each law: if it holds, prove; if not, give a counterexample.
 
 ```agda
--- Your code goes here
+data Bin : Set where
+  ⟨⟩ : Bin
+  _O : Bin → Bin
+  _I : Bin → Bin
+
+inc : Bin → Bin
+inc ⟨⟩ = inc (⟨⟩ O)
+inc (n O) = n I
+inc (n I) = (inc n) O
+
+to : ℕ → Bin
+to zero = ⟨⟩ O
+to (suc n) = inc (to n)
+
+from : Bin → ℕ
+from ⟨⟩ = zero
+from (n O) = 2 * from n
+from (n I) = 1 + (2 * from n)
+
+from-inc-suc : ∀ (b : Bin) → from (inc b) ≡ suc (from b)
+from-inc-suc ⟨⟩ = refl
+from-inc-suc (b O) = refl
+from-inc-suc (b I) =
+  begin
+    from ((inc b) O)
+  ≡⟨⟩
+    2 * from (inc b)
+  ≡⟨ cong (2 *_) ( from-inc-suc b) ⟩
+    2 * suc (from b)
+  ≡⟨ *-suc-r 2 (from b) ⟩
+    2 + (2 * from b)
+  ≡⟨⟩
+    suc (1 + (2 * from b))
+  ≡⟨⟩
+    suc (from (b I))
+  ∎
+
+from-to-inv : ∀ (n : ℕ) → from (to n) ≡ n
+from-to-inv zero = refl
+from-to-inv (suc n) =
+  begin
+    from (inc (to n))
+  ≡⟨ from-inc-suc (to n) ⟩
+    suc (from (to n))
+  ≡⟨ cong suc (from-to-inv n) ⟩
+    suc n
+  ∎
+
+-- reverse direction obviously doesn't hold for things
+-- with leading zeros, or indeed ⟨⟩
 ```
 
 

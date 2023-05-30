@@ -15,7 +15,6 @@ But the number of stars is finite, while natural numbers are infinite.
 Count all the stars, and you will still have as many natural numbers
 left over as you started with.
 
-
 ## The naturals are an inductive datatype
 
 Everyone is familiar with the natural numbers
@@ -430,7 +429,21 @@ other word for evidence, which we will use interchangeably, is _proof_.
 Compute `3 + 4`, writing out your reasoning as a chain of equations, using the equations for `+`.
 
 ```agda
--- Your code goes here
+_ : 3 + 4 ≡ 7
+_ =
+  begin
+    3 + 4
+  ≡⟨⟩
+    suc (2 + 4)
+  ≡⟨⟩
+    suc (suc (1 + 4))
+  ≡⟨⟩
+    suc (suc (suc (0 + 4)))
+  ≡⟨⟩
+    suc (suc (suc (4)))
+  ≡⟨⟩
+    7
+  ∎
 ```
 
 
@@ -506,7 +519,12 @@ Define exponentiation, which is given by the following equations:
 Check that `3 ^ 4` is `81`.
 
 ```agda
--- Your code goes here
+_^_ : ℕ → ℕ → ℕ
+m ^ 0 = 1
+m ^ (suc n) = m * (m ^ n)
+
+_ : 3 ^ 4 ≡ 81
+_ = refl
 ```
 
 
@@ -589,7 +607,27 @@ Section [Logical Connectives](/Decidable/#logical-connectives).
 Compute `5 ∸ 3` and `3 ∸ 5`, writing out your reasoning as a chain of equations.
 
 ```agda
--- Your code goes here
+_ : 5 ∸ 3 ≡ 2
+_ =
+  begin
+    5 ∸ 3
+  ≡⟨⟩
+    4 ∸ 2
+  ≡⟨⟩
+    3 ∸ 1
+  ≡⟨⟩
+    2 ∸ 0
+  ≡⟨⟩
+    2
+  ∎
+
+_ : 3 ∸ 5 ≡ 0
+_ = refl
+
+_∸'_ : ℕ → ℕ → ℕ
+m ∸' zero = m
+zero ∸' suc n = zero
+suc m ∸' suc n = m ∸' n
 ```
 
 
@@ -936,7 +974,70 @@ represents a positive natural, and represent zero by `⟨⟩ O`.
 Confirm that these both give the correct answer for zero through four.
 
 ```agda
--- Your code goes here
+inc : Bin → Bin
+inc ⟨⟩ = inc (⟨⟩ O)
+inc (n O) = n I
+inc (n I) = (inc n) O
+
+_ : inc (⟨⟩) ≡ ⟨⟩ I
+_ = refl
+
+_ : inc (⟨⟩ I) ≡ ⟨⟩ I O
+_ = refl
+
+_ : inc (⟨⟩ I O) ≡ ⟨⟩ I I
+_ = refl
+
+_ : inc (⟨⟩ I I) ≡ ⟨⟩ I O O
+_ = refl
+
+to : ℕ → Bin
+to zero = ⟨⟩ O
+to (suc n) = inc (to n)
+
+from : Bin → ℕ
+from ⟨⟩ = zero
+from (n O) = from n * 2
+from (n I) = (from n * 2) + 1
+
+open import Data.Product
+
+_ : to 0 ≡ ⟨⟩ O
+_ = refl
+
+_ : to 1 ≡ ⟨⟩ I
+_ = refl
+
+_ : to 2 ≡ ⟨⟩ I O
+_ = refl
+
+_ : to 3 ≡ ⟨⟩ I I
+_ = refl
+
+_ : to 4 ≡ ⟨⟩ I O O
+_ = refl
+
+_ : from (⟨⟩) ≡ 0
+_ = refl
+
+_ : from (⟨⟩ O) ≡ 0
+_ = refl
+
+_ : from (⟨⟩ I) ≡ 1
+_ = refl
+
+_ : from (⟨⟩ I O) ≡ 2
+_ = refl
+
+_ : from (⟨⟩ I I) ≡ 3
+_ = refl
+
+_ : from (⟨⟩ I O O) ≡ 4
+_ = refl
+
+_ : from (⟨⟩ O O I O O) ≡ 4
+_ = refl
+
 ```
 
 
