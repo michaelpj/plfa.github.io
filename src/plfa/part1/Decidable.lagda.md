@@ -292,12 +292,17 @@ trouble normalising evidence of negation.)
 
 Analogous to the function above, define a function to decide strict inequality:
 ```agda
-postulate
-  _<?_ : ∀ (m n : ℕ) → Dec (m < n)
-```
 
-```agda
--- Your code goes here
+¬s<s : ∀ {m n : ℕ} → ¬ (m < n) → ¬ (suc m < suc n)
+¬s<s ¬m<n (s<s sm<sn) = ¬m<n sm<sn
+
+_<?_ : ∀ (m n : ℕ) → Dec (m < n)
+zero <? zero = no (λ ())
+zero <? suc n = yes z<s
+suc m <? zero = no (λ ())
+suc m <? suc n with m <? n
+... | yes p = yes (s<s p)
+... | no p =  no (¬s<s p)
 ```
 
 #### Exercise `_≡ℕ?_` (practice)
@@ -548,14 +553,23 @@ Give analogues of the `_⇔_` operation from
 Chapter [Isomorphism](/Isomorphism/#iff),
 operation on booleans and decidables, and also show the corresponding erasure:
 ```agda
-postulate
-  _iff_ : Bool → Bool → Bool
-  _⇔-dec_ : ∀ {A B : Set} → Dec A → Dec B → Dec (A ⇔ B)
-  iff-⇔ : ∀ {A B : Set} (x : Dec A) (y : Dec B) → ⌊ x ⌋ iff ⌊ y ⌋ ≡ ⌊ x ⇔-dec y ⌋
-```
+_iff_ : Bool → Bool → Bool
+true iff true = true
+true iff false = false
+false iff true = false
+false iff false = true
 
-```agda
--- Your code goes here
+_⇔-dec_ : ∀ {A B : Set} → Dec A → Dec B → Dec (A ⇔ B)
+yes a ⇔-dec yes b = yes (record { to = λ _ → b ; from = λ _ → a })
+yes a ⇔-dec no ¬b =  no λ { record { to = to } → ¬b (to a) }
+no ¬a ⇔-dec yes b = no λ { record { from = from } → ¬a (from b) }
+no ¬a ⇔-dec no ¬b =  yes (record { to = λ a → ⊥-elim (¬a a) ; from =  λ b → ⊥-elim (¬b b) })
+
+iff-⇔ : ∀ {A B : Set} (x : Dec A) (y : Dec B) → ⌊ x ⌋ iff ⌊ y ⌋ ≡ ⌊ x ⇔-dec y ⌋
+iff-⇔ (yes x) (yes x₁) = refl
+iff-⇔ (yes x) (no x₁) = refl
+iff-⇔ (no x) (yes x₁) = refl
+iff-⇔ (no x) (no x₁) = refl
 ```
 
 ## Proof by reflection {#proof-by-reflection}

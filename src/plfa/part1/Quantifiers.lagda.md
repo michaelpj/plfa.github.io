@@ -13,13 +13,15 @@ This chapter introduces universal and existential quantification.
 
 ```agda
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; refl)
-open import Data.Nat using (ℕ; zero; suc; _+_; _*_)
+open Eq using (_≡_; refl; sym)
+open import Data.Nat using (ℕ; zero; suc; _+_; _*_; _≤_; z≤n; s≤s)
+open import Data.Nat.Properties using (+-comm; +-suc)
 open import Relation.Nullary using (¬_)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import plfa.part1.Isomorphism using (_≃_; extensionality)
 open import Function using (_∘_)
+open import Data.Empty using (⊥)
 ```
 
 
@@ -90,9 +92,14 @@ dependent product is ambiguous.
 
 Show that universals distribute over conjunction:
 ```agda
-postulate
-  ∀-distrib-× : ∀ {A : Set} {B C : A → Set} →
-    (∀ (x : A) → B x × C x) ≃ (∀ (x : A) → B x) × (∀ (x : A) → C x)
+∀-distrib-× : ∀ {A : Set} {B C : A → Set} →
+  (∀ (x : A) → B x × C x) ≃ (∀ (x : A) → B x) × (∀ (x : A) → C x)
+∀-distrib-× = record
+  { to = λ ∀abxc → ⟨ (λ a → proj₁ (∀abxc a)) , (λ a  → proj₂ (∀abxc a)) ⟩
+  ; from = λ ∀abx∀ac a → ⟨  ( proj₁ ∀abx∀ac ) a  , ( proj₂ ∀abx∀ac ) a ⟩
+  ; from∘to = λ x → refl
+  ; to∘from = λ y → refl
+  }
 ```
 Compare this with the result (`→-distrib-×`) in
 Chapter [Connectives](/Connectives/).
@@ -246,9 +253,14 @@ establish the isomorphism is identical to what we wrote when discussing
 
 Show that existentials distribute over disjunction:
 ```agda
-postulate
-  ∃-distrib-⊎ : ∀ {A : Set} {B C : A → Set} →
-    ∃[ x ] (B x ⊎ C x) ≃ (∃[ x ] B x) ⊎ (∃[ x ] C x)
+∃-distrib-⊎ : ∀ {A : Set} {B C : A → Set} →
+  ∃[ x ] (B x ⊎ C x) ≃ (∃[ x ] B x) ⊎ (∃[ x ] C x)
+∃-distrib-⊎ = record
+  { to = λ { ⟨ a , inj₁ x ⟩ → inj₁ ⟨ a , x ⟩ ; ⟨ a , inj₂ y ⟩ → inj₂ ⟨ a , y ⟩ }
+  ; from = λ { (inj₁ ⟨ a , bx ⟩) → ⟨ a , inj₁ bx ⟩ ; (inj₂ ⟨ a , cx ⟩) → ⟨ a , inj₂ cx ⟩ }
+  ; from∘to = λ { ⟨ a , inj₁ x ⟩ → refl ; ⟨ a , inj₂ y ⟩ → refl }
+  ; to∘from = λ { (inj₁ ⟨ x , x₁ ⟩) → refl ; (inj₂ ⟨ x , x₁ ⟩) → refl }
+  }
 ```
 
 #### Exercise `∃×-implies-×∃` (practice)
@@ -378,13 +390,16 @@ restated in this way.
 -- Your code goes here
 ```
 
-#### Exercise `∃-+-≤` (practice)
+#### Exercise `∃-+-≤` (recommended)
 
 Show that `y ≤ z` holds if and only if there exists a `x` such that
 `x + y ≡ z`.
 
 ```agda
--- Your code goes here
+∃-+-≤ : ∀ {x y z : ℕ } → y ≤ z → ∃[ x ] (x + y ≡ z)
+∃-+-≤ (z≤n {z}) rewrite +-comm 0 z = ⟨ z , refl ⟩
+∃-+-≤ {x} {y} {z} (s≤s {py} {pz} p) with ∃-+-≤ {x} {py} {pz} p
+... | ⟨ x , refl ⟩ rewrite sym (+-suc x py) = ⟨ x , refl ⟩
 ```
 
 
@@ -427,13 +442,15 @@ requires extensionality.
 
 Show that existential of a negation implies negation of a universal:
 ```agda
-postulate
-  ∃¬-implies-¬∀ : ∀ {A : Set} {B : A → Set}
-    → ∃[ x ] (¬ B x)
-      --------------
-    → ¬ (∀ x → B x)
+∃¬-implies-¬∀ : ∀ {A : Set} {B : A → Set}
+  → ∃[ x ] (¬ B x)
+    --------------
+  → ¬ (∀ x → B x)
+∃¬-implies-¬∀ ⟨ x , ¬bx ⟩ = λ f → ¬bx (f x)
 ```
 Does the converse hold? If so, prove; if not, explain why.
+
+No: you have no way to come up with the witness.
 
 
 #### Exercise `Bin-isomorphism` (stretch) {#Bin-isomorphism}
